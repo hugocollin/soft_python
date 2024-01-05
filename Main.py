@@ -97,7 +97,7 @@ def recherche(recherche, nombre_articles):
             post.comments.replace_more(limit=None)                                      # Chargement de tous les commentaires du post
             nb_commentaires = len(post.comments.list())                                 # Obtention du nombre total de commentaires
             document = RedditDocument(titre, auteur, date, url, texte, nb_commentaires) # Création d'un document à partir des données récupérées
-            print(document)
+            #print(document)                                                             # [DEBUG]
             collection.append(document)                                                 # Ajout du document à la liste collection
 
         # Sinon, si la nature du document est "ArXiv"
@@ -110,7 +110,7 @@ def recherche(recherche, nombre_articles):
             summary = texte["summary"].replace("\n", "")                                                     # Remplace des retours à la ligne par des espaces dans le texte
             date = datetime.datetime.strptime(texte["published"], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y/%m/%d") # Formatage de la date en année/mois/jour
             document = ArxivDocument(titre, auteurs, date, texte["id"], summary)                             # Création d'un document à partir des données récupérées
-            print(document)
+            #print(document)                                                                                  # [DEBUG]
             collection.append(document)                                                                      # Ajout du document à la liste collection
 
     # Création de l'index de documents
@@ -135,10 +135,17 @@ def recherche(recherche, nombre_articles):
     corpus_singleton = CorpusSingleton()
     corpus = corpus_singleton.get_corpus()
 
-    # Nettoyage du corpus puis remplissage
+    # Vidage du corpus puis remplissage
     corpus.clear()
     for doc in collection:
         corpus.add(doc)
+
+    # Nettoyage du texte de chaque document dans le corpus
+    for doc in corpus.id2doc.values():
+        doc.texte = corpus.nettoyer_texte(doc.texte)
+
+    # Affichage des statistiques du corpus
+    corpus.stats(10)
 
     # Ouverture d'un fichier, puis écriture avec pickle
     with open("corpus.pkl", "wb") as f:

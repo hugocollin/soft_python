@@ -1,8 +1,12 @@
 from Document import RedditDocument, ArxivDocument # Importation de la classe RedditDocument et ArxivDocument depuis le module Document
 from Author import Author                          # Importation de la classe Author depuis le module Author
 
-import re           # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
-import pandas as pd # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
+import re                             # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
+import pandas as pd                   # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
+import nltk                           # Importation de la bibliotheque nltk, afin de traiter des données textuelles
+from nltk.corpus import stopwords     # Importation de la bibliotheque stopwords, afin de supprimer les mots vides
+from nltk.stem import SnowballStemmer # Importation de la bibliotheque SnowballStemmer, afin de raciniser les mots
+from collections import Counter       # Importation de la bibliotheque Counter, afin de compter les occurrences
 
 class Corpus:
     # Constructeur de la classe Corpus
@@ -86,6 +90,48 @@ class Corpus:
         # Utilisation de pandas pour afficher les résultats dans un tableau
         df = pd.DataFrame(concordance_data)
         return df
+    
+    @staticmethod
+    def nettoyer_texte(texte):
+        texte = texte.lower()                                                  # Conversion du texte en minuscules
+        texte = texte.replace('\n', ' ')                                       # Remplacement des passages à la ligne par des espaces
+        tokens = texte.split()                                                 # Tokenisation
+        tokens = [token for token in tokens if not re.match(r"[,.!?]", token)] # Suppression de la ponctuation
+        tokens = [token for token in tokens if token.isalnum()]                # Suppression des caractères qui ne sont pas alphanumériques
+        stop_words = set(stopwords.words("english"))                            # Récupération des stop words français
+        tokens = [token for token in tokens if token not in stop_words]        # Suppression des stop words français
+        tokens = [token for token in tokens if len(token) > 1]                 # Suppression des token contenant un seul caractère
+        stemmer = SnowballStemmer("english")                                    # Initialisation du stemmer français
+        tokens = [stemmer.stem(token) for token in tokens]                     # Racinisation des tokens
+        return " ".join(tokens)
+
+    def stats(self, n):
+        # Construction du vocabulaire
+        vocabulaire = set()
+        for doc in self.id2doc.values():
+            texte = self.nettoyer_texte(doc.texte)
+            mots = texte.split()
+            vocabulaire.update(mots)
+
+        # Comptage des occurrences
+        occurrences = Counter()
+        doc_freq = Counter()
+        for doc in self.id2doc.values():
+            texte = self.nettoyer_texte(doc.texte)
+            mots = texte.split()
+            occurrences.update(mots)
+            doc_freq.update(set(mots))
+
+        # Création du tableau de fréquences
+        freq = pd.DataFrame.from_dict(occurrences, orient='index', columns=['Term Frequency'])
+        freq['Document Frequency'] = pd.Series(doc_freq)
+
+        # Affichage des statistiques
+        print(f"Nombre de mots différents dans le corpus : {len(vocabulaire)}")
+        print(f"Les {n} mots les plus fréquents dans le corpus :")
+        print(freq.nlargest(n, 'Term Frequency'))
+
+        return freq                                                
 
 class CorpusSingleton:
     _instance = None # Variable pour stocker l'instance unique de Corpus

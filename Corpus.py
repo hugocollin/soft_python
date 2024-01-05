@@ -1,5 +1,8 @@
-from Document import RedditDocument, ArxivDocument
-from Author import Author
+from Document import RedditDocument, ArxivDocument # Importation de la classe RedditDocument et ArxivDocument depuis le module Document
+from Author import Author                          # Importation de la classe Author depuis le module Author
+
+import re           # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
+import pandas as pd # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
 
 class Corpus:
     # Constructeur de la classe Corpus
@@ -10,6 +13,7 @@ class Corpus:
         self.id2doc = {}
         self.ndoc = 0
         self.naut = 0
+        self.full_text = ""  # Initialise une chaîne vide pour stocker le texte complet concaténé
 
     def add(self, doc):
         # Ajoute un document au corpus
@@ -42,6 +46,46 @@ class Corpus:
     
     def clear(self):
         self.id2doc = {} # Réinitialisation de la liste des documents
+    
+    # Fonction pour concaténer l'intégralité des textes des documents
+    def concat_text(self):
+        texts = [doc.texte for doc in self.id2doc.values()]
+        self.full_text = "\n".join(texts)
+
+    # Fonction de recherche utilisant des expressions régulières
+    def search(self, keyword):
+        if not self.full_text:  # Vérifie si le texte complet a déjà été concaténé
+            self.concat_text()
+
+        # Utilisation de re.finditer pour trouver toutes les occurrences du mot-clé dans le texte complet
+        matches = re.finditer(r'\b{}\b'.format(re.escape(keyword)), self.full_text, re.IGNORECASE)
+        passages = [match.group(0) for match in matches]
+
+        return passages
+    
+    def concorde(self, expression, context_size=20):
+        if not self.full_text:
+            self.concat_text()
+
+        matches = re.finditer(expression, self.full_text, re.IGNORECASE)
+        concordance_data = []
+
+        for match in matches:
+            start_idx = max(match.start() - context_size, 0)
+            end_idx = min(match.end() + context_size, len(self.full_text))
+            left_context = self.full_text[start_idx:match.start()].strip()
+            right_context = self.full_text[match.end():end_idx].strip()
+            found_text = match.group(0)
+
+            concordance_data.append({
+                'contexte gauche': left_context,
+                'motif trouvé': found_text,
+                'contexte droit': right_context
+            })
+
+        # Utilisation de pandas pour afficher les résultats dans un tableau
+        df = pd.DataFrame(concordance_data)
+        return df
 
 class CorpusSingleton:
     _instance = None # Variable pour stocker l'instance unique de Corpus

@@ -34,7 +34,7 @@ def recherche(recherche, nombre_articles):
             textes_reddit.append(texte)                  # Ajout du texte à la liste de textes
             textes_bruts_reddit.append(("Reddit", post)) # Ajout du texte brut à la liste de textes bruts
     else:
-        print("Aucun document trouvé avec Reddit")
+        print("Aucun document trouvé sur Reddit")
 
 
     # Paramètres de recherche de Arxiv
@@ -51,7 +51,7 @@ def recherche(recherche, nombre_articles):
             textes_arxiv.append(texte)                            # Ajout du texte à la liste de textes
             textes_bruts_arxiv.append(("ArXiv", document))        # Ajout du texte brut à la liste de textes bruts
     else:
-        print("Aucun document trouvé avec ArXiv")
+        print("Aucun document trouvé sur ArXiv")
 
     # Suppression des textes trop courts
     textes_reddit = [texte for texte in textes_reddit if len(texte) >= 100]
@@ -97,7 +97,7 @@ def recherche(recherche, nombre_articles):
             post.comments.replace_more(limit=None)                                      # Chargement de tous les commentaires du post
             nb_commentaires = len(post.comments.list())                                 # Obtention du nombre total de commentaires
             document = RedditDocument(titre, auteur, date, url, texte, nb_commentaires) # Création d'un document à partir des données récupérées
-            #print(document)                                                             # [DEBUG]
+            # print(document)                                                             # [DEBUG]
             collection.append(document)                                                 # Ajout du document à la liste collection
 
         # Sinon, si la nature du document est "ArXiv"
@@ -110,7 +110,7 @@ def recherche(recherche, nombre_articles):
             summary = texte["summary"].replace("\n", "")                                                     # Remplace des retours à la ligne par des espaces dans le texte
             date = datetime.datetime.strptime(texte["published"], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y/%m/%d") # Formatage de la date en année/mois/jour
             document = ArxivDocument(titre, auteurs, date, texte["id"], summary)                             # Création d'un document à partir des données récupérées
-            #print(document)                                                                                  # [DEBUG]
+            # print(document)                                                                                  # [DEBUG]
             collection.append(document)                                                                      # Ajout du document à la liste collection
 
     # Création de l'index de documents
@@ -140,9 +140,10 @@ def recherche(recherche, nombre_articles):
     for doc in collection:
         corpus.add(doc)
 
-    # Nettoyage du texte de chaque document dans le corpus
-    for doc in corpus.id2doc.values():
-        doc.texte = corpus.nettoyer_texte(doc.texte)
+    # Construction du vocabulaire et des matrices TF et TFxIDF
+    corpus.build_vocab()
+    corpus.build_mat_TF()
+    corpus.build_mat_TFxIDF()
 
     # Affichage des statistiques du corpus
     corpus.stats(10)

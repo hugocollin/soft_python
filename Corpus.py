@@ -1,11 +1,12 @@
-from Document import RedditDocument, ArxivDocument # Importation de la classe RedditDocument et ArxivDocument depuis le module Document
-from Author import Author                          # Importation de la classe Author depuis le module Author
+from Author import Author             # Importation de la classe Author depuis le module Author
 
 import re                             # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
 import pandas as pd                   # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
+import numpy as np                    # Importation de la bibliotheque numpy, afin de manipuler des matrices
 import nltk                           # Importation de la bibliotheque nltk, afin de traiter des données textuelles
 from nltk.corpus import stopwords     # Importation de la bibliotheque stopwords, afin de supprimer les mots vides
 from nltk.stem import SnowballStemmer # Importation de la bibliotheque SnowballStemmer, afin de raciniser les mots
+from scipy.sparse import csr_matrix   # Importation de la bibliotheque csr_matrix, afin de créer une matrice creuse
 from collections import Counter       # Importation de la bibliotheque Counter, afin de compter les occurrences
 
 class Corpus:
@@ -98,10 +99,10 @@ class Corpus:
         tokens = texte.split()                                                 # Tokenisation
         tokens = [token for token in tokens if not re.match(r"[,.!?]", token)] # Suppression de la ponctuation
         tokens = [token for token in tokens if token.isalnum()]                # Suppression des caractères qui ne sont pas alphanumériques
-        stop_words = set(stopwords.words("english"))                            # Récupération des stop words français
-        tokens = [token for token in tokens if token not in stop_words]        # Suppression des stop words français
+        stop_words = set(stopwords.words("english"))                           # Récupération des stop words anglais
+        tokens = [token for token in tokens if token not in stop_words]        # Suppression des stop words anglais
         tokens = [token for token in tokens if len(token) > 1]                 # Suppression des token contenant un seul caractère
-        stemmer = SnowballStemmer("english")                                    # Initialisation du stemmer français
+        stemmer = SnowballStemmer("english")                                   # Initialisation du stemmer anglais
         tokens = [stemmer.stem(token) for token in tokens]                     # Racinisation des tokens
         return " ".join(tokens)
 
@@ -131,7 +132,38 @@ class Corpus:
         print(f"Les {n} mots les plus fréquents dans le corpus :")
         print(freq.nlargest(n, 'Term Frequency'))
 
-        return freq                                                
+        return freq
+    
+    def build_vocab(self):
+        self.vocab = {}
+        for doc in self.id2doc.values():
+            texte = self.nettoyer_texte(doc.texte)
+            mots = texte.split()
+            for mot in mots:
+                if mot not in self.vocab:
+                    self.vocab[mot] = {'id': len(self.vocab), 'occurrences': 0, 'doc_freq': 0}
+                self.vocab[mot]['occurrences'] += 1
+
+    def build_mat_TF(self):
+        rows, cols, data = [], [], []
+        doc_ids = list(self.id2doc.keys())
+        for new_doc_id, doc_id in enumerate(doc_ids):
+            doc = self.id2doc[doc_id]
+            texte = self.nettoyer_texte(doc.texte)
+            mots = texte.split()
+            counts = Counter(mots)
+            for mot, count in counts.items():
+                if mot in self.vocab:
+                    rows.append(new_doc_id)
+                    cols.append(self.vocab[mot]['id'])
+                    data.append(count)
+                    self.vocab[mot]['doc_freq'] += 1
+        self.mat_TF = csr_matrix((data, (rows, cols)), shape=(len(self.id2doc), len(self.vocab)))
+
+    def build_mat_TFxIDF(self):
+        N = len(self.id2doc)
+        idf = np.log(N / np.array([self.vocab[mot]['doc_freq'] for mot in self.vocab.keys()]))
+        self.mat_TFxIDF = self.mat_TF.multiply(idf)                                            
 
 class CorpusSingleton:
     _instance = None # Variable pour stocker l'instance unique de Corpus

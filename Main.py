@@ -1,35 +1,33 @@
-from Document import RedditDocument, ArxivDocument # Importation de la classe RedditDocument et ArxivDocument depuis le module Document
-from Author import Author                          # Importation de la classe Author depuis le module Author
-from Corpus import CorpusSingleton                 # Importation de la classe Corpus depuis le module Corpus
+from Document import RedditDocument, ArxivDocument
+from Author import Author
+from Corpus import CorpusSingleton
 
-import praw           # Importation la bibliothèque praw pour accéder à l'API de Reddit
-import urllib.request # Importation la bibliothèque urllib pour effectuer des requêtes HTTP 
-import xmltodict      # Importation de la bibliothèque xmltodict pour analyser des données XML
-import time           # Importation de la bibliothèque time pour manipuler des dates et des heures
-import datetime       # Importation de la bibliothèque datetime pour manipuler des dates et des heures
-import pickle         # Importation de la bibliothèque pickle pour convertir un objet en un format binaire pouvant être enregistré dans un fichier ou transmis sur un réseau
+import praw
+import urllib.request
+import xmltodict
+import time
+import datetime
+import pickle
 
-
+# Fonction principale du moteur de recherche
 def recherche(topic, mots_cles, nombre_articles, methode_affichage):
-    # Enregistrement du temps de début
-    debut_recherche = time.time()
-
     # Initilisation de variables globales
-    topic_str = str(topic)             # Conversion de la variable en chaine de caractères
-    nombre_articles_int = int(nombre_articles) # Conversion de la variable en entier
+    debut_recherche = time.time()                  # Enregistrement du temps de début de traitement
+    topic_str = str(topic)                         # Conversion de la variable en chaine de caractères
+    nombre_articles_int = int(nombre_articles)     # Conversion de la variable en entier
     methode_affichage_str = str(methode_affichage) # Conversion de la variable en chaine de caractères
 
-    textes_reddit = [] # Initialisation de la liste de textes Reddit
-    textes_arxiv = []  # Initialisation de la liste de textes ArXiv
-
+    # Initialisation des listes de textes par source
+    textes_reddit = []       # Initialisation de la liste de textes Reddit
+    textes_arxiv = []        # Initialisation de la liste de textes ArXiv
     textes_bruts_reddit = [] # Initialisation de la liste de textes bruts Reddit
     textes_bruts_arxiv = []  # Initialisation de la liste de textes bruts ArXiv
 
-
     # Paramètres de recherche de Reddit
     reddit = praw.Reddit(client_id='-GD1SJ96QztEIjktZ0o6nQ', client_secret='GinKmTjo2ggKztu0bwSb6mlXHX57Pw', user_agent='FAC', check_for_async=False) # Connexion à Reddit en utilisant les identifiants
-    subr = reddit.subreddit(topic_str).hot(limit=nombre_articles_int)                                                                             # Recherche des documents correspondants au topic de la recherche
+    subr = reddit.subreddit(topic_str).hot(limit=nombre_articles_int)                                                                                 # Recherche des documents correspondants au topic de la recherche
 
+    # Vérification si le nombre d'articles trouvés est suffisant
     if subr:
         # Récupération des posts Reddit
         for post in subr:
@@ -38,15 +36,14 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
             textes_reddit.append(texte)                  # Ajout du texte à la liste de textes
             textes_bruts_reddit.append(("Reddit", post)) # Ajout du texte brut à la liste de textes bruts
     else:
-        print("Aucun document trouvé sur Reddit")
-
+        print("[WARNING] : Aucun document trouvé sur Reddit")
 
     # Paramètres de recherche de Arxiv
     url = 'http://export.arxiv.org/api/query?search_query=all:' + topic_str + '&start=0&max_results=' + str(nombre_articles_int) # Recherche des documents correspondants au topic de la recherche
-    data = urllib.request.urlopen(url)                                                                                               # Ouverture de la connexion HTTP
-    data = xmltodict.parse(data.read().decode('utf-8'))                                                                              # Décode et analyse les données au format XML
+    data = urllib.request.urlopen(url)                                                                                           # Ouverture de la connexion HTTP
+    data = xmltodict.parse(data.read().decode('utf-8'))                                                                          # Décodage et analyse des données au format XML
 
-    # verifier si le nombre d'articles trouvés est suffisant
+    # Vérification si le nombre d'articles trouvés est suffisant
     if 'entry' in data['feed'] and data['feed']['entry']:
         # Récupération des posts Arxiv
         for document in data['feed']['entry']:
@@ -55,36 +52,37 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
             textes_arxiv.append(texte)                            # Ajout du texte à la liste de textes
             textes_bruts_arxiv.append(("ArXiv", document))        # Ajout du texte brut à la liste de textes bruts
     else:
-        print("Aucun document trouvé sur ArXiv")
+        print("[WARNING] : Aucun document trouvé sur ArXiv")
 
     # Suppression des textes trop courts
     textes_reddit = [texte for texte in textes_reddit if len(texte) >= 100]
     textes_arxiv = [texte for texte in textes_arxiv if len(texte) >= 100]
 
+    # Initialisation des listes de textes
     textes = []       # Initialisation de la liste de textes
     textes_bruts = [] # Initialisation de la liste de textes bruts
+    index_reddit = 0  # Initialisation de l'index de parcour sur les textes Reddit
+    index_arxiv = 0   # Initialisation de l'index de parcour sur les textes ArXiv
 
-    index_reddit = 0 # Initialisation de l'index de parcour sur les textes Reddit
-    index_arxiv = 0  # Initialisation de l'index de parcour sur les textes ArXiv
-
-    # On ajoute le nombre d'elements necessaires a la liste de textes
-    # On s'arrete si on a parcouru tous les textes Reddit et ArXiv ou si on a atteint le nombre d'articles demandes
+    # Ajout du nombre de documents nécessaires à la liste de textes
+    # Arrêt si on a atteint le nombre de documents demandés ou si on a parcouru tous les documents
     while len(textes) < nombre_articles_int and (index_reddit < len(textes_reddit) or index_arxiv < len(textes_arxiv)):
-        # On verifie qu'il y ait encore des textes Reddit
+        # Vériication qu'il y ait encore des textes Reddit
         if index_reddit < len(textes_reddit):
             textes.append(textes_reddit[index_reddit])
             textes_bruts.append(textes_bruts_reddit[index_reddit])
             index_reddit += 1
-        # On verifie qu'il y ait encore des textes ArXiv
+        # Vériication qu'il y ait encore des textes ArXiv
         if index_arxiv < len(textes_arxiv):
             textes.append(textes_arxiv[index_arxiv])
             textes_bruts.append(textes_bruts_arxiv[index_arxiv])
             index_arxiv += 1
 
-    textes = " ".join(textes) # Combination des éléments de la liste textes en une chaîne de caractères, en les séparant par des espaces
+    textes = " ".join(textes) # Concaténation des textes en une seule chaîne de caractères
 
-    collection = [] # Initialisation d'une liste vide pour contenir les documents
+    collection = [] # Initialisation d'une liste vide pour contenir tout les documents de la recherche
 
+    # Création des documents à partir des données brutes
     for nature, texte in textes_bruts:
         # Si la nature du document est "Reddit"
         if nature == "Reddit":
@@ -93,19 +91,19 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
             date = datetime.datetime.fromtimestamp(texte.created).strftime("%Y/%m/%d")  # Formatage de la date en année/mois/jour
             url = "https://www.reddit.com/"+ texte.permalink                            # Création de l'URL du texte
             nb_commentaires = texte.num_comments                                        # Récupération du nombre de commentaires
-            texte = texte.selftext.replace("\n", "")                                    # Remplace des retours à la ligne par des espaces dans le texte
+            texte = texte.selftext.replace("\n", "")                                    # Remplacement des retours à la ligne par des espaces dans le texte
             document = RedditDocument(titre, auteur, date, url, texte, nb_commentaires) # Création d'un document à partir des données récupérées
             collection.append(document)                                                 # Ajout du document à la liste collection
 
         # Sinon, si la nature du document est "ArXiv"
         elif nature == "ArXiv": 
             titre = texte["title"].replace('\n', '')                                                         # Remplacement des retours à la ligne par des espaces dans le titre
-            raw_authors = texte.get("author", [])
+            raw_authors = texte.get("author", [])                                                            # Récupération des auteurs
             if isinstance(raw_authors, dict):                                                                # Si les données brutes de l'auteur sont un dictionnaire
                 auteurs = [raw_authors.get("name", "")]
             else:                                                                                            # Si les données brutes de l'auteur sont une liste de dictionnaires
                 auteurs = [a.get("name", "") for a in raw_authors if isinstance(a, dict)]
-            summary = texte["summary"].replace("\n", "")                                                     # Remplace des retours à la ligne par des espaces dans le texte
+            summary = texte["summary"].replace("\n", "")                                                     # Remplacement des retours à la ligne par des espaces dans le texte
             date = datetime.datetime.strptime(texte["published"], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y/%m/%d") # Formatage de la date en année/mois/jour
             document = ArxivDocument(titre, auteurs, date, texte["id"], summary)                             # Création d'un document à partir des données récupérées
             collection.append(document)                                                                      # Ajout du document à la liste collection
@@ -115,18 +113,19 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
     for i, doc in enumerate(collection):
         id2doc[i] = doc.titre
 
-    auteurs = {}
-    aut2id = {} 
-    nombre_auteurs = 0
+    # Initialisation des dictionnaires de stockage des auteurs
+    auteurs = {}        # Initialisation d'un dictionnaire vide pour contenir les auteurs
+    aut2id = {}         # Initialisation d'un dictionnaire vide pour contenir les index des auteurs
+    nombre_auteurs = 0  # Initialisation du nombre d'auteurs
 
-    # Création de la liste+index des Auteurs
+    # Création de la liste et index des auteurs
     for texte in collection:
-        if texte.auteur not in aut2id:
-            nombre_auteurs += 1
-            auteurs[nombre_auteurs] = Author(texte.auteur)
-            aut2id[doc.auteur] = nombre_auteurs
+        if texte.auteur not in aut2id:                     # Si l'auteur n'est pas dans le dictionnaire des index des auteurs
+            nombre_auteurs += 1                            # Incrémentation du nombre d'auteurs
+            auteurs[nombre_auteurs] = Author(texte.auteur) # Ajout de l'auteur à la liste des auteurs
+            aut2id[doc.auteur] = nombre_auteurs            # Ajout de l'index de l'auteur au dictionnaire des index des auteurs
 
-        auteurs[aut2id[doc.auteur]].add(texte.texte)
+        auteurs[aut2id[doc.auteur]].add(texte.texte) # Ajout du texte à la production de l'auteur
 
     # Utilisation du Singleton pour obtenir l'instance unique de Corpus
     corpus_singleton = CorpusSingleton()
@@ -137,21 +136,23 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
     for doc in collection:
         corpus.add(doc)
 
-    # Construction du vocabulaire et des matrices TF et TFxIDF
-    corpus.build_vocab()
-    corpus.build_mat_TF()
-    corpus.build_mat_TFxIDF()
-
-    # Transformez ces mots-clés en un vecteur sur le vocabulaire précédemment construit
-    vecteur_requete = corpus.vectoriser_recherche(mots_cles)
-
-    # Calculez une similarité entre votre vecteur de requête et tous les documents
-    similarites = corpus.calculer_similarites(vecteur_requete)
-
+    # Traitement sur le corpus
+    corpus.build_vocab()                                       # Construction du vocabulaire
+    corpus.build_mat_TF()                                      # Construction de la matrice TF
+    corpus.build_mat_TFxIDF()                                  # Construction de la matrice TFxIDF
+    
+    vecteur_requete = corpus.vectoriser_recherche(mots_cles)   # Vectorisation de la requête
+    
+    similarites = corpus.calculer_similarites(vecteur_requete) # Calcul des similarités
     # Mise à jour de la similarité de chaque document
     for id, sim in similarites.items():
         corpus.id2doc[id].similarite = sim
+    
+    # # [DEBUG]
+    # for id, doc in corpus.id2doc.items():
+    #     print(f"Document ID: {id}, Similarité: {doc.similarite}")
 
+    # Enregistrement du corpus (traitement à revoir)
     # Ouverture d'un fichier, puis écriture avec pickle
     with open("corpus.pkl", "wb") as f:
         pickle.dump(corpus, f)
@@ -163,16 +164,12 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
     with open("corpus.pkl", "rb") as f:
         corpus = pickle.load(f)
 
-    # Enregistrement du temps de fin
-    fin_recherche = time.time()
+    # Traitement sur l'affichage des statistiques de la recherche
+    fin_recherche = time.time()                                 # Enregistrement du temps de fin de traitement
+    temps_execution = round(fin_recherche - debut_recherche, 2) # Calcul du temps d'exécution
+    corpus.stats(10, temps_execution)                           # Affichage des statistiques du corpus
 
-    # Calcul du temps d'exécution
-    temps_execution = round(fin_recherche - debut_recherche, 2)
-    
-    # Affichage des statistiques du corpus
-    corpus.stats(10, temps_execution)
-
-    # Affichage du corpus
+    # Traitement sur l'affichage des documents de la recherche
     if methode_affichage_str == "Pertinence":
         methode_affichage_str = "simi"
     elif methode_affichage_str == "Temporelle":

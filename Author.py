@@ -5,7 +5,7 @@ class Author:
         self.ndoc = 0
         self.production = []
 
-    # Ajoute un document à la production de l'auteur
+    # Méthode pour ajouter un document à la production de l'auteur
     def add(self, production):
         self.ndoc += 1
         self.production.append(production)

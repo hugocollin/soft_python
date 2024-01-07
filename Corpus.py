@@ -1,13 +1,14 @@
-from Author import Author             # Importation de la classe Author depuis le module Author
+from Author import Author # Importation de la classe Author depuis le module Author
 
-import re                             # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
-import pandas as pd                   # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
-import numpy as np                    # Importation de la bibliotheque numpy, afin de manipuler des matrices
-import nltk                           # Importation de la bibliotheque nltk, afin de traiter des données textuelles
-from nltk.corpus import stopwords     # Importation de la bibliotheque stopwords, afin de supprimer les mots vides
-from nltk.stem import SnowballStemmer # Importation de la bibliotheque SnowballStemmer, afin de raciniser les mots
-from scipy.sparse import csr_matrix   # Importation de la bibliotheque csr_matrix, afin de créer une matrice creuse
-from collections import Counter       # Importation de la bibliotheque Counter, afin de compter les occurrences
+import re                                              # Importation de la bibliotheque re, afin de travailler avec des expressions régulières
+import pandas as pd                                    # Importation de la bibliotheque pandas, afin de manipuler et d'analyser des données
+import numpy as np                                     # Importation de la bibliotheque numpy, afin de manipuler des matrices
+import nltk                                            # Importation de la bibliotheque nltk, afin de traiter des données textuelles
+from nltk.corpus import stopwords                      # Importation de la bibliotheque stopwords, afin de supprimer les mots vides
+from nltk.stem import SnowballStemmer                  # Importation de la bibliotheque SnowballStemmer, afin de raciniser les mots
+from scipy.sparse import csr_matrix                    # Importation de la bibliotheque csr_matrix, afin de créer une matrice creuse
+from sklearn.metrics.pairwise import cosine_similarity # Importation de la bibliotheque cosine_similarity, afin de calculer la similarité cosinus
+from collections import Counter                        # Importation de la bibliotheque Counter, afin de compter les occurrences
 
 class Corpus:
     # Constructeur de la classe Corpus
@@ -32,20 +33,31 @@ class Corpus:
         self.ndoc += 1
         self.id2doc[self.ndoc] = doc
     
-    def show(self, n_docs=-1, tri="abc"):
+    def show(self, tri, n_docs=-1, similarites=None):
         docs = list(self.id2doc.values()) # Récupération de la liste des documents
         # Triage alphabétique des documents
-        if tri == "abc":
-            docs = list(sorted(docs, key=lambda x: x.titre.lower()))[:n_docs]
+        if tri == "alpha":
+            docs.sort(key=lambda x: x.titre.lower())
         # Triage temporel des documents
-        elif tri == "123":
-            docs = list(sorted(docs, key=lambda x: x.date))[:n_docs]
+        elif tri == "chrono":
+            docs.sort(key=lambda x: x.date, reverse=True)
+        # Triage par similarité
+        elif tri == "simi":
+            # Vérification que les indices existent dans similarites
+            indices = [i for i in self.id2doc.keys() if i < len(similarites)]
+            indices.sort(key=lambda x: similarites[x], reverse=True)
+            docs = [self.id2doc[id] for id in indices]
 
-        print("\n".join(list(map(repr, docs)))) # Affichage des documents
+        # Sélection des n_docs documents les plus pertinents
+        if n_docs != -1:
+            docs = docs[:n_docs]
+
+        # Retourner le résultat au lieu de l'imprimer
+        return "\n".join(list(map(repr, docs)))
 
     def __repr__(self):
         docs = list(self.id2doc.values())                        # Récupèration de la liste des documents
-        docs = list(sorted(docs, key=lambda x: x.titre.lower())) # Triage des documents par ordre alphabétique
+        docs = list(sorted(docs, key=lambda x: x.titre.lower())) # Triage des documents
 
         return "\n".join(list(map(str, docs))) # Retourne la représentation du corpus
     
@@ -128,9 +140,11 @@ class Corpus:
         freq['Document Frequency'] = pd.Series(doc_freq)
 
         # Affichage des statistiques
-        print(f"Nombre de mots différents dans le corpus : {len(vocabulaire)}")
-        print(f"Les {n} mots les plus fréquents dans le corpus :")
+        print("----------/ Statistiques générales de la recherche /----------\n")
+        print(f"Nombre de mots différents dans les documents : {len(vocabulaire)}")
+        print(f"Les {n} mots les plus fréquents dans les documents :")
         print(freq.nlargest(n, 'Term Frequency'))
+        print("\n----------/ Résultats de la recherche /----------")
 
         return freq
     
@@ -163,7 +177,45 @@ class Corpus:
     def build_mat_TFxIDF(self):
         N = len(self.id2doc)
         idf = np.log(N / np.array([self.vocab[mot]['doc_freq'] for mot in self.vocab.keys()]))
-        self.mat_TFxIDF = self.mat_TF.multiply(idf)                                            
+        self.mat_TFxIDF = self.mat_TF.multiply(idf)
+        # print("Matrice TFxIDF :", self.mat_TFxIDF.toarray()) # [DEBUG]
+
+    def vectoriser_recherche(self, requete):
+        # Nettoyer et diviser la requête en mots
+        mots = self.nettoyer_texte(requete).split()
+
+        # Initialiser un vecteur de zéros de la taille du vocabulaire
+        vecteur = np.zeros(len(self.vocab))
+
+        # Pour chaque mot dans la requête, si le mot est dans le vocabulaire, augmenter son compte dans le vecteur
+        for mot in mots:
+            if mot in self.vocab:
+                vecteur[self.vocab[mot]['id']] += 1
+
+        # print("Vecteur de requête :", vecteur) # [DEBUG]
+        return vecteur
+
+    def calculer_similarites(self, vecteur_requete):
+        # Calculer le produit scalaire entre le vecteur de requête et chaque vecteur de document
+        produit_scalaire = self.mat_TFxIDF.dot(vecteur_requete)
+        # print("Produit scalaire :", produit_scalaire) # [DEBUG]
+
+        # Calculer la norme du vecteur de requête
+        norme_requete = np.linalg.norm(vecteur_requete)
+
+        # Calculer la norme de chaque vecteur de document
+        normes_documents = np.linalg.norm(self.mat_TFxIDF.toarray(), axis=1)
+
+        # Ajouter une petite constante aux normes pour éviter la division par zéro
+        epsilon = 1e-10
+        norme_requete += epsilon
+        normes_documents += epsilon
+
+        # Calculer la similarité cosinus entre le vecteur de requête et chaque vecteur de document
+        similarites = produit_scalaire / (norme_requete * normes_documents)
+
+        # Retourner un dictionnaire où les clés sont les identifiants des documents et les valeurs sont les similarités
+        return {id: sim for id, sim in zip(self.id2doc.keys(), similarites)}
 
 class CorpusSingleton:
     _instance = None # Variable pour stocker l'instance unique de Corpus

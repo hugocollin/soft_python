@@ -9,11 +9,11 @@ import datetime       # Importation de la bibliothèque datetime pour manipuler 
 import pickle         # Importation de la bibliothèque pickle pour convertir un objet en un format binaire pouvant être enregistré dans un fichier ou transmis sur un réseau
 
 
-def recherche(recherche, nombre_articles):
+def recherche(recherche, nombre_articles, methode_affichage):
     # Initilisation de variables globales
     recherche_str = str(recherche)             # Conversion de la variable en chaine de caractères
     nombre_articles_int = int(nombre_articles) # Conversion de la variable en entier
-
+    methode_affichage_str = str(methode_affichage) # Conversion de la variable en chaine de caractères
 
     textes_reddit = [] # Initialisation de la liste de textes Reddit
     textes_arxiv = []  # Initialisation de la liste de textes ArXiv
@@ -23,8 +23,8 @@ def recherche(recherche, nombre_articles):
 
 
     # Paramètres de recherche de Reddit
-    reddit = praw.Reddit(client_id='-GD1SJ96QztEIjktZ0o6nQ', client_secret='GinKmTjo2ggKztu0bwSb6mlXHX57Pw', user_agent='FAC') # Connexion à Reddit en utilisant les identifiants
-    subr = reddit.subreddit(recherche_str).hot(limit=nombre_articles_int)                                                      # Recherche des documents correspondants au topic de la recherche
+    reddit = praw.Reddit(client_id='-GD1SJ96QztEIjktZ0o6nQ', client_secret='GinKmTjo2ggKztu0bwSb6mlXHX57Pw', user_agent='FAC', check_for_async=False) # Connexion à Reddit en utilisant les identifiants
+    subr = reddit.subreddit(recherche_str).hot(limit=nombre_articles_int)                                                                             # Recherche des documents correspondants au topic de la recherche
 
     if subr:
         # Récupération des posts Reddit
@@ -77,11 +77,6 @@ def recherche(recherche, nombre_articles):
             textes_bruts.append(textes_bruts_arxiv[index_arxiv])
             index_arxiv += 1
 
-    # Traitements sur les textes
-    for i, texte in enumerate(textes): # Affichage des caractéristiques de chaque texte
-        print(f"Document {i} :\t# Nombre de caractères : {len(texte)}\t# Nombre de mots : {len(texte.split(' '))}\t# Nombre de phrases : {len(texte.split('.'))}")
-
-
     textes = " ".join(textes) # Combination des éléments de la liste textes en une chaîne de caractères, en les séparant par des espaces
 
     collection = [] # Initialisation d'une liste vide pour contenir les documents
@@ -93,9 +88,8 @@ def recherche(recherche, nombre_articles):
             auteur = str(texte.author)                                                  # Convertion de l'auteur en chaîne de caractères
             date = datetime.datetime.fromtimestamp(texte.created).strftime("%Y/%m/%d")  # Formatage de la date en année/mois/jour
             url = "https://www.reddit.com/"+ texte.permalink                            # Création de l'URL du texte
+            nb_commentaires = texte.num_comments                                        # Récupération du nombre de commentaires
             texte = texte.selftext.replace("\n", "")                                    # Remplace des retours à la ligne par des espaces dans le texte
-            post.comments.replace_more(limit=None)                                      # Chargement de tous les commentaires du post
-            nb_commentaires = len(post.comments.list())                                 # Obtention du nombre total de commentaires
             document = RedditDocument(titre, auteur, date, url, texte, nb_commentaires) # Création d'un document à partir des données récupérées
             # print(document)                                                             # [DEBUG]
             collection.append(document)                                                 # Ajout du document à la liste collection
@@ -103,10 +97,11 @@ def recherche(recherche, nombre_articles):
         # Sinon, si la nature du document est "ArXiv"
         elif nature == "ArXiv": 
             titre = texte["title"].replace('\n', '')                                                         # Remplacement des retours à la ligne par des espaces dans le titre
-            try:
-                auteurs = ([a.get("name", "") for a in texte.get("author", []) if isinstance(a, dict)])      # Création d'une liste d'auteurs
-            except:
-                auteurs = texte.get("author", {}).get("name", "")                                            # Si l'auteur est seul, il n'y a pas besoin de liste
+            raw_authors = texte.get("author", [])
+            if isinstance(raw_authors, dict):                                                                # Si les données brutes de l'auteur sont un dictionnaire
+                auteurs = [raw_authors.get("name", "")]
+            else:                                                                                            # Si les données brutes de l'auteur sont une liste de dictionnaires
+                auteurs = [a.get("name", "") for a in raw_authors if isinstance(a, dict)]
             summary = texte["summary"].replace("\n", "")                                                     # Remplace des retours à la ligne par des espaces dans le texte
             date = datetime.datetime.strptime(texte["published"], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y/%m/%d") # Formatage de la date en année/mois/jour
             document = ArxivDocument(titre, auteurs, date, texte["id"], summary)                             # Création d'un document à partir des données récupérées
@@ -148,6 +143,16 @@ def recherche(recherche, nombre_articles):
     # Affichage des statistiques du corpus
     corpus.stats(10)
 
+    # Transformez ces mots-clés en un vecteur sur le vocabulaire précédemment construit
+    vecteur_requete = corpus.vectoriser_recherche(recherche_str)
+
+    # Calculez une similarité entre votre vecteur de requête et tous les documents
+    similarites = corpus.calculer_similarites(vecteur_requete)
+
+    # Mise à jour de la similarité de chaque document
+    for id, sim in similarites.items():
+        corpus.id2doc[id].similarite = sim
+
     # Ouverture d'un fichier, puis écriture avec pickle
     with open("corpus.pkl", "wb") as f:
         pickle.dump(corpus, f)
@@ -160,4 +165,10 @@ def recherche(recherche, nombre_articles):
         corpus = pickle.load(f)
 
     # Affichage du corpus
-    corpus.show()
+    if methode_affichage_str == "Pertinence":
+        methode_affichage_str = "simi"
+    elif methode_affichage_str == "Temporelle":
+        methode_affichage_str = "chrono"
+    elif methode_affichage_str == "Alphabétique":
+        methode_affichage_str = "alpha"
+    return corpus.show(tri=methode_affichage_str, similarites=similarites)

@@ -7,25 +7,38 @@ class Document:
         self.url = url
         self.texte = texte
         self.source = source
+
+    # Méthode pour récupérer le type du document
+    def get_source(self):
+        return self.source
+
+    # Acceseur du nombre de caractères
+    def get_nb_caracteres(self):
+        return len(self.texte)
+    
+    # Acceseur du nombre de mots
+    def get_nb_mots(self):
+        return len(self.texte.split())
+    
+    # Acceseur du nombre de phrases
+    def get_nb_phrases(self):
+        return self.texte.count('.') + self.texte.count('!') + self.texte.count('?')
     
     # Méthode pour afficher toutes les informations d'une instance
     def __repr__(self):
         return f"\n\nTitre : {self.titre}\nAuteur : {self.auteur}\nDate : {self.date}\nURL : {self.url}\nTexte : {self.texte}\nSource : {self.source}\t"
 
-    # Méthode de représentation de la classe Document
-    def __str__(self):
-        return f"{self.titre}, par {self.auteur}"
-    
-    # Méthode pour récupérer le type du document
-    def getSource(self):
-        return self.source
-
 # Classe RedditDocument héritant de Document
 class RedditDocument(Document):
     # Constructeur de la classe RedditDocument
-    def __init__(self, titre="", auteur="", date="", url="", texte="", nb_commentaires=0):
+    def __init__(self, titre="", auteur="", date="", url="", texte="", nb_commentaires=0, similarite="N/A"):
         super().__init__(titre, auteur, date, url, texte, source="Reddit")
         self.nb_commentaires = nb_commentaires
+        self.similarite = similarite
+    
+    # Renvoie le type spécifique du document Reddit
+    def get_source(self):
+        return "Reddit"
 
     # Accesseur pour le nombre de commentaires
     def get_nb_commentaires(self):
@@ -34,28 +47,24 @@ class RedditDocument(Document):
     # Mutateur pour le nombre de commentaires
     def set_nb_commentaires(self, nb_commentaires):
         self.nb_commentaires = nb_commentaires
+
+    # Accesseur pour le taux de similarité
+    def get_similarite(self):
+        return self.similarite
     
     # Méthode pour afficher toutes les informations d'une instance d'un document Reddit
     def __repr__(self):
-        return f"{super().__repr__()}\nNombre de commentaires : {self.nb_commentaires}\t"
-
-    # Méthode d'affichage spécifique pour RedditDocument
-    def __str__(self):
-        return f"{super().__str__()}, {self.nb_commentaires} commentaires"
-    
-    # Renvoie le type spécifique du document Reddit
-    def getSource(self):
-        return "Reddit"
+        base_repr = super().__repr__()
+        pourcentage_similarite = round(self.similarite * 100, 1) if self.similarite != "N/A" else "N/A"
+        return f"{base_repr}\nNombre de commentaires : {self.nb_commentaires}\nStatistiques du document :\n   Pertinence : {pourcentage_similarite}%\n   Nombre de caractères : {self.get_nb_caracteres()}\n   Nombre de mots : {self.get_nb_mots()}\n   Nombre de phrases : {self.get_nb_phrases()}\t"
 
 # Classe ArxivDocument héritant de Document
 class ArxivDocument(Document):
     # Constructeur de la classe ArxivDocument
-    def __init__(self, titre="", auteurs=None, date="", url="", texte=""):
+    def __init__(self, titre="", auteurs="", date="", url="", texte="", similarite="N/A"):
         super().__init__(titre, "", date, url, texte, source="Arxiv")
-        if auteurs is None:
-            self.auteurs = []
-        else:
-            self.auteurs = auteurs
+        self.auteurs = auteurs
+        self.similarite = similarite
 
     # Accesseur pour la liste des co-auteurs
     def get_auteurs(self):
@@ -65,18 +74,25 @@ class ArxivDocument(Document):
     def ajouter_auteur(self, auteur):
         self.auteurs.append(auteur)
 
-    # Méthode pour afficher toutes les informations d'une instance d'un document Reddit
-    def __repr__(self):
-        return f"{super().__repr__()}\nCo-auteurs : {self.auteurs}\t"
+    # Renvoie le type spécifique du document Arxiv
+    def get_source(self):
+        return "Arxiv"
 
-    # Méthode d'affichage spécifique pour ArxivDocument
+    # Accesseur pour le taux de similarité
+    def get_similarite(self):
+        return self.similarite
+
+    # Méthode pour afficher toutes les informations d'une instance d'un document Arxiv
+    def __repr__(self):
+        auteur_principal = self.auteurs[0] if self.auteurs else "Aucun"
+        co_auteurs = ", ".join(self.auteurs[1:]) if len(self.auteurs) > 1 else "Aucun"
+        pourcentage_similarite = round(self.similarite * 100, 1) if self.similarite != "N/A" else "N/A"
+        return f"\n\nTitre : {self.titre}\nAuteur : {auteur_principal}\nCo-auteurs : {co_auteurs}\nDate : {self.date}\nURL : {self.url}\nTexte : {self.texte}\nSource : {self.source}\nStatistiques du document :\n   Pertinence : {pourcentage_similarite}%\n   Nombre de caractères : {self.get_nb_caracteres()}\n   Nombre de mots : {self.get_nb_mots()}\n   Nombre de phrases : {self.get_nb_phrases()}\t"
+
+    # [DEBUG]
     def __str__(self):
         liste_auteurs = ", ".join(self.auteurs)
-        return f"{super().__str__()}, Co-auteurs : {liste_auteurs}"
-    
-    # Renvoie le type spécifique du document Arxiv
-    def getSource(self):
-        return "Arxiv"
+        return f"{super().__str__()}, Auteurs : {liste_auteurs}"
 
 # Classe DocumentFactory
 class DocumentFactory:

@@ -118,7 +118,7 @@ class Corpus:
         tokens = [stemmer.stem(token) for token in tokens]                     # Racinisation des tokens
         return " ".join(tokens)
 
-    def stats(self, n):
+    def stats(self, n, temps_execution):
         # Construction du vocabulaire
         vocabulaire = set()
         for doc in self.id2doc.values():
@@ -141,6 +141,7 @@ class Corpus:
 
         # Affichage des statistiques
         print("----------/ Statistiques générales de la recherche /----------\n")
+        print(f"Temps d'exécution de la recherche : {temps_execution} secondes")
         print(f"Nombre de mots différents dans les documents : {len(vocabulaire)}")
         print(f"Les {n} mots les plus fréquents dans les documents :")
         print(freq.nlargest(n, 'Term Frequency'))

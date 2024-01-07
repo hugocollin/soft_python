@@ -5,13 +5,17 @@ from Corpus import CorpusSingleton                 # Importation de la classe Co
 import praw           # Importation la bibliothèque praw pour accéder à l'API de Reddit
 import urllib.request # Importation la bibliothèque urllib pour effectuer des requêtes HTTP 
 import xmltodict      # Importation de la bibliothèque xmltodict pour analyser des données XML
+import time           # Importation de la bibliothèque time pour manipuler des dates et des heures
 import datetime       # Importation de la bibliothèque datetime pour manipuler des dates et des heures
 import pickle         # Importation de la bibliothèque pickle pour convertir un objet en un format binaire pouvant être enregistré dans un fichier ou transmis sur un réseau
 
 
-def recherche(recherche, nombre_articles, methode_affichage):
+def recherche(topic, mots_cles, nombre_articles, methode_affichage):
+    # Enregistrement du temps de début
+    debut_recherche = time.time()
+
     # Initilisation de variables globales
-    recherche_str = str(recherche)             # Conversion de la variable en chaine de caractères
+    topic_str = str(topic)             # Conversion de la variable en chaine de caractères
     nombre_articles_int = int(nombre_articles) # Conversion de la variable en entier
     methode_affichage_str = str(methode_affichage) # Conversion de la variable en chaine de caractères
 
@@ -24,7 +28,7 @@ def recherche(recherche, nombre_articles, methode_affichage):
 
     # Paramètres de recherche de Reddit
     reddit = praw.Reddit(client_id='-GD1SJ96QztEIjktZ0o6nQ', client_secret='GinKmTjo2ggKztu0bwSb6mlXHX57Pw', user_agent='FAC', check_for_async=False) # Connexion à Reddit en utilisant les identifiants
-    subr = reddit.subreddit(recherche_str).hot(limit=nombre_articles_int)                                                                             # Recherche des documents correspondants au topic de la recherche
+    subr = reddit.subreddit(topic_str).hot(limit=nombre_articles_int)                                                                             # Recherche des documents correspondants au topic de la recherche
 
     if subr:
         # Récupération des posts Reddit
@@ -38,7 +42,7 @@ def recherche(recherche, nombre_articles, methode_affichage):
 
 
     # Paramètres de recherche de Arxiv
-    url = 'http://export.arxiv.org/api/query?search_query=all:' + recherche_str + '&start=0&max_results=' + str(nombre_articles_int) # Recherche des documents correspondants au topic de la recherche
+    url = 'http://export.arxiv.org/api/query?search_query=all:' + topic_str + '&start=0&max_results=' + str(nombre_articles_int) # Recherche des documents correspondants au topic de la recherche
     data = urllib.request.urlopen(url)                                                                                               # Ouverture de la connexion HTTP
     data = xmltodict.parse(data.read().decode('utf-8'))                                                                              # Décode et analyse les données au format XML
 
@@ -140,11 +144,8 @@ def recherche(recherche, nombre_articles, methode_affichage):
     corpus.build_mat_TF()
     corpus.build_mat_TFxIDF()
 
-    # Affichage des statistiques du corpus
-    corpus.stats(10)
-
     # Transformez ces mots-clés en un vecteur sur le vocabulaire précédemment construit
-    vecteur_requete = corpus.vectoriser_recherche(recherche_str)
+    vecteur_requete = corpus.vectoriser_recherche(mots_cles)
 
     # Calculez une similarité entre votre vecteur de requête et tous les documents
     similarites = corpus.calculer_similarites(vecteur_requete)
@@ -163,6 +164,15 @@ def recherche(recherche, nombre_articles, methode_affichage):
     # Ouverture du fichier, puis lecture avec pickle
     with open("corpus.pkl", "rb") as f:
         corpus = pickle.load(f)
+
+    # Enregistrement du temps de fin
+    fin_recherche = time.time()
+
+    # Calcul du temps d'exécution
+    temps_execution = round(fin_recherche - debut_recherche, 2)
+    
+    # Affichage des statistiques du corpus
+    corpus.stats(10, temps_execution)
 
     # Affichage du corpus
     if methode_affichage_str == "Pertinence":

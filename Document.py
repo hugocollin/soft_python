@@ -89,11 +89,6 @@ class ArxivDocument(Document):
         pourcentage_similarite = round(self.similarite * 100, 1) if self.similarite != "N/A" else "N/A"
         return f"\n\nTitre : {self.titre}\nAuteur : {auteur_principal}\nCo-auteurs : {co_auteurs}\nDate : {self.date}\nURL : {self.url}\nTexte : {self.texte}\nSource : {self.source}\nStatistiques du document :\n   Pertinence : {pourcentage_similarite}%\n   Nombre de caractères : {self.get_nb_caracteres()}\n   Nombre de mots : {self.get_nb_mots()}\n   Nombre de phrases : {self.get_nb_phrases()}\t"
 
-    # [DEBUG]
-    def __str__(self):
-        liste_auteurs = ", ".join(self.auteurs)
-        return f"{super().__str__()}, Auteurs : {liste_auteurs}"
-
 # Classe DocumentFactory
 class DocumentFactory:
     @staticmethod

@@ -179,7 +179,6 @@ class Corpus:
         N = len(self.id2doc)
         idf = np.log(N / np.array([self.vocab[mot]['doc_freq'] for mot in self.vocab.keys()]))
         self.mat_TFxIDF = self.mat_TF.multiply(idf)
-        # print("Matrice TFxIDF :", self.mat_TFxIDF.toarray()) # [DEBUG]
 
     def vectoriser_recherche(self, requete):
         # Nettoyer et diviser la requête en mots
@@ -193,13 +192,11 @@ class Corpus:
             if mot in self.vocab:
                 vecteur[self.vocab[mot]['id']] += 1
 
-        # print("Vecteur de requête :", vecteur) # [DEBUG]
         return vecteur
 
     def calculer_similarites(self, vecteur_requete):
         # Calculer le produit scalaire entre le vecteur de requête et chaque vecteur de document
         produit_scalaire = self.mat_TFxIDF.dot(vecteur_requete)
-        # print("Produit scalaire :", produit_scalaire) # [DEBUG]
 
         # Calculer la norme du vecteur de requête
         norme_requete = np.linalg.norm(vecteur_requete)

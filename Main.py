@@ -95,7 +95,6 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
             nb_commentaires = texte.num_comments                                        # Récupération du nombre de commentaires
             texte = texte.selftext.replace("\n", "")                                    # Remplace des retours à la ligne par des espaces dans le texte
             document = RedditDocument(titre, auteur, date, url, texte, nb_commentaires) # Création d'un document à partir des données récupérées
-            # print(document)                                                             # [DEBUG]
             collection.append(document)                                                 # Ajout du document à la liste collection
 
         # Sinon, si la nature du document est "ArXiv"
@@ -109,7 +108,6 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
             summary = texte["summary"].replace("\n", "")                                                     # Remplace des retours à la ligne par des espaces dans le texte
             date = datetime.datetime.strptime(texte["published"], "%Y-%m-%dT%H:%M:%SZ").strftime("%Y/%m/%d") # Formatage de la date en année/mois/jour
             document = ArxivDocument(titre, auteurs, date, texte["id"], summary)                             # Création d'un document à partir des données récupérées
-            # print(document)                                                                                  # [DEBUG]
             collection.append(document)                                                                      # Ajout du document à la liste collection
 
     # Création de l'index de documents

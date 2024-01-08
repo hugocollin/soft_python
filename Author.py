@@ -9,7 +9,3 @@ class Author:
     def add(self, production):
         self.ndoc += 1
         self.production.append(production)
-
-    # Méthode de représentation de la classe Author
-    def __str__(self):
-        return f"Auteur : {self.name}\t# productions : {self.ndoc}"

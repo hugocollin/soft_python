@@ -89,7 +89,7 @@ chargement_label = ttk.Label(root, text="", foreground="red")
 continuer_animation = False
 
 # Widget pour afficher le résultat de la recherche
-resultat_text = st.ScrolledText(root, width=120, height=35, wrap=tk.WORD)
+resultat_text = st.ScrolledText(root, width=120, height=35, wrap=tk.WORD, font=("Arial", 10))
 
 # Widget pour lancer la recherche
 bouton_recherche = ttk.Button(root, text="Rechercher", command=clique_bouton)

@@ -4,7 +4,7 @@ import Main
 import sys
 import threading
 
-# Création de la fenêtre principale
+# Création de la fenêtre prinpip3 install customtkintercipale
 root = ctk.CTk()
 root.title("Moteur de recherche Python")
 
@@ -65,12 +65,12 @@ def clique_bouton():
 # Widgets pour saisir le topic de la recherche
 topic_label = ctk.CTkLabel(root, text="Sujet :")
 topic_entry = ctk.CTkEntry(root)
-topic_entry.insert(0, "Space")
+topic_entry.insert(0, "Food")
 
 # Widgets pour saisir les mots-clés de la recherche
 mots_cles_label = ctk.CTkLabel(root, text="Mots clés :")
 mots_cles_entry = ctk.CTkEntry(root)
-mots_cles_entry.insert(0, "Space Moon")
+mots_cles_entry.insert(0, "Food Model Image")
 
 # Widgets pour sélectionner le nombre d'articles à extraire
 nombre_articles_label = ctk.CTkLabel(root, text="Nombre d'articles :")
@@ -95,7 +95,7 @@ methode_affichage_combobox = ctk.CTkComboBox(root, values=['Pertinence', 'Tempor
 methode_affichage_combobox.set('Pertinence')
 
 # Créer un label pour le message de chargement
-chargement_label = ctk.CTkLabel(root, text="", text_color="red", font=("Arial", 16, "bold"))
+chargement_label = ctk.CTkLabel(root, text="", text_color="grey", font=("Arial", 16, "bold"))
 # Variable pour contrôler si l'animation doit continuer
 continuer_animation = False
 

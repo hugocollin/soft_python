@@ -30,7 +30,7 @@
 1. Le programme dispose de 2 interfaces graphiques différentes :
     - Interface notebook : Exécutez la seule cellule du fichier 'Interface.ipynb' avec votre noyau Python contenant les bibliothèques précédemment installées pour démarrer le moteur de recherche.
     - Interface fenêtre : Exécutez le fichier 'Interface.py' avec votre noyau Python contenant les bibliothèques précédemment installées pour démarrer le moteur de recherche.
-2. L'interface du moteur de recherche apparaît en bas de la cellule exécutée. Vous pouvez alors paramétrer votre recherche :
+2. L'interface du moteur de recherche apparaît en bas de la cellule exécutée/dans une fenêtre. Vous pouvez alors paramétrer votre recherche :
     - Sujet : permet de renseigner le sujet global de la recherche souhaitée. Attention, celui-ci ne doit être constitué que d'un seul mot.
     - Mots clés : permet de renseigner des mots qui viendront compléter et affiner le sujet global de la recherche afin d'obtenir des résultats plus pertinents.
     - Nombre d'articles à extraire : permet de sélectionner le nombre d'articles à extraire (de 1 à 1000). Si vous saisissez le nombre d'articles à extraire via votre clavier, cliquez sur la touche [ENTRÉE] pour confirmer la saisie. Attention, ce paramètre fait varier le temps d'exécution de la recherche (comptez environ 30 secondes pour une recherche de 1000 articles).

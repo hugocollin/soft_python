@@ -20,13 +20,10 @@ class PrintCapture:
 def animation_chargement(i=0):
     global continuer_animation
     if continuer_animation:
-        chargement_label.config(text="Chargement" + "." * i)
+        chargement_label.config(text="Chargement " + format(i*0.1, '.1f') + "s")
         root.update()
-        if chargement_label.cget("text") == "Chargement...":
-            i = 0
-        else:
-            i += 1
-        root.after(250, animation_chargement, i)
+        i += 1
+        root.after(100, animation_chargement, i)
 
 def recherche_thread():
     global continuer_animation

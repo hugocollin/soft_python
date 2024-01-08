@@ -127,9 +127,10 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
 
         auteurs[aut2id[doc.auteur]].add(texte.texte) # Ajout du texte à la production de l'auteur
 
-    # Utilisation du Singleton pour obtenir l'instance unique de Corpus
-    corpus_singleton = CorpusSingleton()
-    corpus = corpus_singleton.get_corpus()
+    # Initialisation de l'unique Corpus
+    corpus_singleton = CorpusSingleton()   # Initialisation du singleton
+    corpus_singleton.reset_corpus()        # Initialisation du corpus
+    corpus = corpus_singleton.get_corpus() # Récupération du corpus
 
     # Vidage du corpus puis remplissage
     corpus.clear()
@@ -147,10 +148,6 @@ def recherche(topic, mots_cles, nombre_articles, methode_affichage):
     # Mise à jour de la similarité de chaque document
     for id, sim in similarites.items():
         corpus.id2doc[id].similarite = sim
-    
-    # # [DEBUG]
-    # for id, doc in corpus.id2doc.items():
-    #     print(f"Document ID: {id}, Similarité: {doc.similarite}")
 
     # Enregistrement du corpus (traitement à revoir)
     # Ouverture d'un fichier, puis écriture avec pickle

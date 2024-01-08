@@ -44,9 +44,9 @@ class Corpus:
             docs.sort(key=lambda x: x.date, reverse=True)
         # Triage par similarité
         elif tri == "simi":
-            indices = [i for i in self.id2doc.keys() if i < len(similarites)] # Récupération des indices des documents
-            indices.sort(key=lambda x: similarites[x], reverse=True)          # Triage des indices par similarité
-            docs = [self.id2doc[id] for id in indices]                        # Récupération des documents triés
+            indices = [i for i in self.id2doc.keys() if i <= len(similarites)] # Récupération des indices des documents
+            indices.sort(key=lambda x: similarites[x], reverse=True)           # Triage des indices par similarité
+            docs = [self.id2doc[id] for id in indices]                         # Récupération des documents triés
 
         # Sélection des n_docs documents les plus pertinents
         if n_docs != -1:
@@ -222,9 +222,13 @@ class CorpusSingleton:
     def __new__(cls):
         if cls._instance is None:                       # Vérification si une instance de Corpus existe déjà
             cls._instance = super().__new__(cls)        # Création d'une nouvelle instance si elle n'existe pas déjà
-            cls._instance.corpus = Corpus("Mon corpus") # Initialisation de l'instance de Corpus à l'intérieur du Singleton
+            cls._instance.corpus = Corpus("Résultats")  # Initialisation de l'instance de Corpus à l'intérieur du Singleton
         return cls._instance
 
     # Méthode pour récupérer l'instance de Corpus
     def get_corpus(self):
         return self.corpus
+    
+    # Méthode pour réinitialiser l'instance de Corpus
+    def reset_corpus(self):
+        self.corpus = Corpus("Résultats")

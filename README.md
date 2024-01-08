@@ -26,7 +26,9 @@
 
 ## Utilisation
 
-1. Exécutez la seule cellule du fichier 'Interface.ipynb' avec votre noyau Python contenant les bibliothèques précédemment installées pour démarrer le moteur de recherche.
+1. Le programme dispose de 2 interfaces graphiques différentes :
+    - Interface notebook : Exécutez la seule cellule du fichier 'Interface.ipynb' avec votre noyau Python contenant les bibliothèques précédemment installées pour démarrer le moteur de recherche.
+    - Interface fenêtre : Exécutez le fichier 'Interface.py' avec votre noyau Python contenant les bibliothèques précédemment installées pour démarrer le moteur de recherche.
 2. L'interface du moteur de recherche apparaît en bas de la cellule exécutée. Vous pouvez alors paramétrer votre recherche :
     - Topic : permet de renseigner le sujet global de la recherche souhaitée. Attention, celui-ci ne doit être constitué que d'un seul mot.
     - Mots clés : permet de renseigner des mots qui viendront compléter et affiner le sujet global de la recherche afin d'obtenir des résultats plus pertinents.

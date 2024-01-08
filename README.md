@@ -19,6 +19,7 @@
     - scipy
     - sklearn
     - collections
+    - tkinter
     - unittest*
 
 **Cette bibliothèque n'est pas nécessaire au fonctionnement de l'application, celle-ci est seulement utile pour tester le code de l'application.*

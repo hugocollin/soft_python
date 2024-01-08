@@ -19,11 +19,9 @@
     - scipy
     - sklearn
     - collections
+    - unittest*
 
-    - pytest*
-    - warnings*
-
-**Ces bibliothèques ne sont pas nécessaires au fonctionnement de l'application, celles-ci sont seulement utiles pour tester le code de l'application.*
+**Cette bibliothèque n'est pas nécessaire au fonctionnement de l'application, celle-ci est seulement utile pour tester le code de l'application.*
 
 ## Utilisation
 
